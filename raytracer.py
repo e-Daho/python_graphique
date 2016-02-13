@@ -4,6 +4,11 @@
 from math import sqrt, tan 
 import Image
 
+'''
+Descrition : 
+- ce programme est destiné à créer des images grâce à la librairie Image de python.
+- il est pour l'instant possible de créer des shères colorées sous différents éclairages
+'''
 
 #==============================================================================
 
@@ -168,21 +173,23 @@ class Lumiere():
 
 
 def main():
+
+	# on crée une image à partir de la librairie Image
 	W = 640
 	H = 480
 	image = Image.new( 'RGB', (W,H), "black")
 	pixels = image.load()
 
+	#on définit la lumière, la caméra et les sphères à tracer
 	lumiere  = Lumiere(Vector(50,50,50), 500)
-	camera = Camera(Vector(0,0,55), 60 * 3.14 / 180)
-
-	sphere1 = Sphere(Vector(0,0,0), 5, [1, 0.5, 0])
-	sphere2 = Sphere(Vector(0,0,20), 15, [0, 1, 1])
-
+	camera = Camera(Vector(0,0,0), 60 * 3.14 / 180)
+	sphere1 = Sphere(Vector(0,0,-10), 1, [1, 0.5, 0])
+	sphere2 = Sphere(Vector(0,0,-25), 10, [0, 1, 1])
 	spheres = [sphere2, sphere1]
 
 	D = (W/2) / tan(camera.fov/2)
 	
+	# pour chaque pixel de l'image, on regarde si le rayon projeté intersecte la sphère
 	for i in range(image.size[1]):
 		for j in range(image.size[0]):
 			d = Vector(j - W/2, i - H/2, -D).getNormalized()
