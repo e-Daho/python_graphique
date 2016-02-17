@@ -1,10 +1,6 @@
 #! /usr/bin/env python
 # -*-coding: utf-8-*-
 
-from Lumiere import Lumiere
-from Ray import Ray
-from Camera import Camera
-
 class Scene:
 	'''
 	classe représentant la scène caractérisée par

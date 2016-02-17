@@ -2,8 +2,7 @@
 # -*-coding: utf-8-*-
 
 from math import sqrt, tan
-from Intersection import Intersection
-from Materiau import Materiau
+from structures import Intersection
 
 class Sphere():
 	'''

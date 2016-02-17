@@ -2,16 +2,10 @@
 # -*-coding: utf-8-*-
 
 import Image
-from Camera import Camera
-from Intersection import Intersection
-from Lumiere import Lumiere
-from Ray import Ray
-from Scene import Scene
-from Sphere import Sphere
-from Vector import Vector
 from math import tan
-from Materiau import Materiau
-
+from decors import Scene, Camera, Lumiere
+from formes import Sphere, Materiau
+from structures import Vector, Ray, Intersection
 
 '''
 Descrition : 
@@ -108,6 +102,9 @@ def getColor(scene, ray, n_rebonds):
 		return (0,0,0)
 
 	return (0,0,0)
+
+
+#==============================================================================
 
 
 def reflechir(ray, forme, intersection):
