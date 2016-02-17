@@ -7,7 +7,7 @@ import Image
 '''
 Descrition : 
 - ce programme est destiné à créer des images grâce à la librairie Image de python.
-- il est pour l'instant possible de créer des shères colorées sous différents éclairages
+- il est pour l'instant possible de créer des shères et des hyperboloides colorées sous différents éclairages
 '''
 
 #==============================================================================
@@ -149,7 +149,6 @@ class Hyperboloide():
 		return Vector((pt.xyz[0]-x_0)/a**2, -(pt.xyz[1]-y_0)/b**2, (pt.xyz[2]-z_0)/c**2).getNormalized
 
 
-
 #==============================================================================
 
 
@@ -219,6 +218,36 @@ class Lumiere():
 
 #==============================================================================
 
+'''
+class Scene:
+	def __init__(self,sphere_vect):
+		self.objets = sphere_vect
+		self.lumiere = lumiere
+	
+	def intersect(self, ray):
+		point_inter = Vector(0,0,0)
+		centre_inter = Vector(0,0,0)
+		distance = 'inf'
+
+		for sphere in self.obj:
+			intersection = sphere.intersect(ray)
+
+			if intersection.has_intersection
+				point_inter = (d * intersection.t) + camera.foyer
+				d = ((point_inter-ray.origin).sqrNorm)**2
+
+				if d < distance and point_inter[3] < ray.origin[3]:
+			    	point_inter =(d * intersection.t) + camera.foyer
+			    	sphere_inter=s
+			    	dist=dist_P
+			    	if dist=='inf':
+			return dist
+			else:
+				return (sphere_inter.O,inter)
+'''
+
+#==============================================================================
+
 
 def poly2getIntersection(a,b,c):
 	# fonction permettant de résoudre une équation polynomiale d'ordre 2
@@ -253,21 +282,27 @@ def poly2getIntersection(a,b,c):
 
 
 def main():
-
+	
 	# on crée une image à partir de la librairie Image
-	W = 640
-	H = 480
+	W = 160
+	H = 120
 	image = Image.new( 'RGB', (W,H), "black")
 	pixels = image.load()
 
 	#on définit la lumière, la caméra et les sphères à tracer
-	lumiere  = Lumiere(Vector(10,10,0), 500000) # luminosité entre 50000 et 500000
-	camera = Camera(Vector(0,0,0), 60 * 3.14 / 180)
-	sphere1 = Sphere(Vector(0,0,-10), 1, [1, 0.5, 0])
-	sphere2 = Sphere(Vector(0,0,-25), 10, [0, 1, 1])
-	hyperboloide = Hyperboloide(Vector(0,0,-10), [0.5,1,0.5], [1,0.8,0])
+	lumiere  = Lumiere(Vector(-20,50,40), 1000) # luminosité entre 50000 et 500000
 
-	formes = [sphere2, hyperboloide, sphere1]
+	camera = Camera(Vector(0,0,55), 90 * 3.14 / 180)
+	s1 = Sphere(Vector(0,0,0.1), 10, [1, 1, 1])
+	s2 = Sphere(Vector(0,0,1000), 940, [1, 1, 1])
+	s3 = Sphere(Vector(0,0,-1000), 940, [1, 1, 1])
+	s4 = Sphere(Vector(1000,0,0), 940, [1, 1, 1])
+	s5 = Sphere(Vector(-1000,0,0), 940, [1, 1, 1])
+	s6 = Sphere(Vector(0,1000,0), 990, [1, 1, 1])
+	s7 = Sphere(Vector(0,-1000,0), 940, [1, 1, 1])
+	#hyperboloide = Hyperboloide(Vector(0,0,-10), [0.5,1,0.5], [1,0.8,0])
+
+	formes = [s1,s2,s3,s4,s5,s6,s7]
 
 	D = (W/2) / tan(camera.fov/2)
 	
@@ -277,28 +312,64 @@ def main():
 
 			d = Vector(j - W/2, i - H/2, -D).getNormalized
 
-			for forme in formes:
+			distance_min = float("inf")
 
+			for forme in formes:				
 				intersection = forme.intersect(Ray(camera.foyer, d))
 
 				if intersection.has_intersection:
+					if intersection.t < distance_min:
+						intersection_min = intersection
+						forme_min = forme
+						distance_min = intersection.t 
 
-					# on calcule le point d'intersection entre le rayon d et la forme
-					intersection.pt_intersection = (d * intersection.t) + camera.foyer
+			if distance_min != float("inf"):
 
-					# on calcule la normale à la forme au point d'intersection
-					intersection.normale = forme.getNormale(intersection.pt_intersection)
+				forme = forme_min
+				intersection = intersection_min
+				ombre = False
 
-					# on calcule le vecteur lumière arrivant sur le point d'intersection
-					v_lumiere = (lumiere.origin - intersection.pt_intersection).getNormalized
+				# on calcule le point d'intersection entre le rayon d et la forme
+				intersection.pt_intersection = (d * intersection.t) + camera.foyer
 
-					# on calcule la distance entre la source de lumière et le point d'intersection
-					distance = (lumiere.origin - intersection.pt_intersection).sqrNorm
+				# on calcule la normale à la forme au point d'intersection
+				intersection.normale = forme.getNormale(intersection.pt_intersection)
+
+				intersection.pt_intersection = intersection.pt_intersection + intersection.normale * 0.01
+
+				# on regarde s'il est dans l'ombre d'un autre objet
+				# pour cela on calcule le vecteur v1 partant de ce point et allant vers l'origine de la lumière
+				v_lumiere = (lumiere.origin - intersection.pt_intersection).getNormalized
+
+				# on calcule la distance associée
+				distance = (lumiere.origin - intersection.pt_intersection).sqrNorm
+
+				# pour chaque forme f
+				for f in formes:
+
+					# on regarde si v_lumiere intersecte f
+					i2 = f.intersect(Ray(intersection.pt_intersection,v_lumiere))
+
+					if i2.has_intersection:
+
+						# on calcule la distance dist entre i1 et f
+						dist = i2.t
+
+						# on compare cette distance avec la distance d1 entre le i1 et l'origine de la lumière
+						# si cette d est inférieure à d1, le point est dans l'ombre, on ne fait rien
+						if dist < distance:
+
+							ombre = True
+							break
+
+				if not ombre:
+
+					# on recalcule le point d'intersection entre la forme et d en décolant le point d'intersection de la sphère
+					# corrige un bug d'affichage
+					#intersection.normale = forme.getNormale(intersection.pt_intersection + intersection.normale * 0.1)
 
 					# on calcule le max entre 0 et le produit scalaire du vecteur lumière et du vecteur normal
-					valeur = v_lumiere.dot(intersection.normale) * lumiere.intensite / (2*3.14*(distance**2))
-					print valeur
-
+					valeur = v_lumiere.dot(intersection.normale) * lumiere.intensite / (2*3.14) #TODO *(distance**2)
 					# on change les pixels en fonction du calcul du produit scalaire et de la valeur d'absorbance des couleurs par la sphère
 
 					# pour une forme unicolore (disque blanc)
@@ -313,7 +384,7 @@ def main():
 						max(0, int(valeur * forme.rho[1])),
 						max(0, int(valeur * forme.rho[2]))
 					)
-				
+					
 			
 	image.show()
 	
