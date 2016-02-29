@@ -25,9 +25,11 @@ class Ray():
 		"""
 
 		# on définit le rayon réfléchi
-		self.dir = (self.dir - forme.getNormale(intersection.pt_intersection) * \
+		direction = (self.dir - forme.getNormale(intersection.pt_intersection) * \
 			2 * forme.getNormale(intersection.pt_intersection).dot(self.dir)).getNormalized
-		self.origin = intersection.pt_intersection
+		origin = intersection.pt_intersection
+
+		return Ray(origin, direction)
 
 
 
@@ -48,9 +50,9 @@ class Ray():
 			coeff = 1 - (1 - (self.dir.dot(intersection.normale))**2) * (1 / forme.materiau.indiceRefraction)**2
 
 			# on retourne le rayon réfracté
-			self.dir = (self.dir * (1 / forme.materiau.indiceRefraction) - intersection.normale * \
+			direction = (self.dir * (1 / forme.materiau.indiceRefraction) - intersection.normale * \
 			(self.dir.dot(intersection.normale) / forme.materiau.indiceRefraction + sqrt(coeff))).getNormalized
-			self.origin = intersection.pt_intersection
+			origin = intersection.pt_intersection
 
 		# sinon si le rayon sort de la sphère
 		else:
@@ -64,6 +66,8 @@ class Ray():
 			if coeff < 0:
 				return self.reflechir(forme, intersection)
 
-			self.dir = (self.dir * forme.materiau.indiceRefraction - intersection.normale * \
+			direction = (self.dir * forme.materiau.indiceRefraction - intersection.normale * \
 			(self.dir.dot(intersection.normale) * forme.materiau.indiceRefraction + sqrt(coeff))).getNormalized
-			self.origin = intersection.pt_intersection
+			origin = intersection.pt_intersection
+
+		return Ray(origin, direction)

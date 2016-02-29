@@ -90,12 +90,10 @@ class Scene:
 			intersection.pt_intersection = intersection.pt_intersection + intersection.normale * 0.01
 
 			if forme.materiau.speculaire and n_rebonds > 0:
-				ray.reflechir(forme, intersection)
-				return self.getColor(ray, n_rebonds - 1)
+				return self.getColor(ray.reflechir(forme, intersection), n_rebonds - 1)
 
 			if forme.materiau.indiceRefraction != 0  and n_rebonds > 0:
-				ray.refracter(forme, intersection)
-				return self.getColor(ray, n_rebonds - 1)
+				return self.getColor(ray.refracter(forme, intersection), n_rebonds - 1)
 
 			# on calcule le vecteur v_lumiere partant de ce point et allant vers l'origine de la lumière
 			v_lumiere = (self.lumiere.origin - intersection.pt_intersection).getNormalized
@@ -127,16 +125,16 @@ class Scene:
 		pixels = image.load()
 
 		D = (image.size[0]/2) / tan(camera.fov/2)
-	
-		# pour chaque pixel de l'image, on regarde si le rayon projeté intersecte la sphère
+
+		rayon = Ray(camera.foyer, Vector(0,0,0))
 		
 		for i in xrange(image.size[1]):
 			for j in xrange(image.size[0]):
 
-				vecteurDirecteur = Vector(j - image.size[0]/2, i - image.size[1]/2, -D).getNormalized
+				rayon.dir = Vector(j - image.size[0]/2, i - image.size[1]/2, -D).getNormalized
 
 				# on calcule la couleur du pixel intersecté
-				pixels[j,i] = self.getColor(Ray(camera.foyer, vecteurDirecteur), n_rebonds)
+				pixels[j,i] = self.getColor(rayon, n_rebonds)
 
 		return image
 				
