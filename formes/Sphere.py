@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*-coding: utf-8-*-
 
-from math import sqrt, tan
+from math import sqrt
 from structures import Intersection
 
 class Sphere():
@@ -18,6 +18,7 @@ class Sphere():
 		self.materiau = m
 
 
+
 	def intersect(self, ray):
 		# fonction testant l'intersection entre la sphère et un rayon
 		# prend un ray en argument, retourne un objet intersection
@@ -29,6 +30,7 @@ class Sphere():
 
 		# on renvoie un objet intersection
 		return self.poly2getIntersection(a,b,c)
+
 
 
 	def poly2getIntersection(self, a,b,c):
@@ -58,6 +60,7 @@ class Sphere():
 					result.t = tmin
 
 		return result
+
 
 
 	def getNormale(self, pt):

@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*-coding: utf-8-*-
 
-from math import sqrt, tan 
+from math import sqrt
 
 class Vector(object):
 	''' 

@@ -15,8 +15,6 @@ class Ray():
 		self.dir = d
 
 
-#==============================================================================
-
 
 	def reflechir(self, forme, intersection):
 		"""
@@ -31,8 +29,6 @@ class Ray():
 			2 * forme.getNormale(intersection.pt_intersection).dot(self.dir)).getNormalized
 		self.origin = intersection.pt_intersection
 
-
-#==============================================================================
 
 
 	def refracter(self, forme, intersection):
