@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # -*-coding: utf-8-*-
 
+import numpy as np
 from math import sqrt
 
 class Ray():
@@ -25,8 +26,10 @@ class Ray():
 		"""
 
 		# on définit le rayon réfléchi
-		direction = (self.dir - forme.getNormale(intersection.pt_intersection) * \
-			2 * forme.getNormale(intersection.pt_intersection).dot(self.dir)).getNormalized
+		direction = (self.dir - 2 * np.dot(self.dir, forme.getNormale(intersection.pt_intersection)) \
+			* forme.getNormale(intersection.pt_intersection))
+		direction = direction / np.linalg.norm(direction)
+
 		origin = intersection.pt_intersection
 
 		return Ray(origin, direction)
@@ -41,33 +44,39 @@ class Ray():
 		:returns Ray, rayon réfracté 
 		"""
 
+		scalaire = np.dot(self.dir, intersection.normale)
+
 		# si le rayon entre dans la sphère, c'est à dire si il est orienté dans le sens inverse de la normale 
-		if intersection.normale.dot(self.dir) < 0:
+		if scalaire < 0:
 
 			# on décolle légèrement le point d'intersection de la forme pour éviter un bug
-			intersection.pt_intersection = intersection.pt_intersection - forme.getNormale(intersection.pt_intersection) * 0.05
+			intersection.pt_intersection = intersection.pt_intersection - 0.05 * forme.getNormale(intersection.pt_intersection)
 
-			coeff = 1 - (1 - (self.dir.dot(intersection.normale))**2) * (1 / forme.materiau.indiceRefraction)**2
+			coeff = 1 - (1 / forme.materiau.indiceRefraction)**2 * (1 - scalaire**2)
 
 			# on retourne le rayon réfracté
-			direction = (self.dir * (1 / forme.materiau.indiceRefraction) - intersection.normale * \
-			(self.dir.dot(intersection.normale) / forme.materiau.indiceRefraction + sqrt(coeff))).getNormalized
+			direction = (1 / forme.materiau.indiceRefraction) * self.dir - \
+			(scalaire / forme.materiau.indiceRefraction + sqrt(coeff)) * intersection.normale
+			direction = direction / np.linalg.norm(direction)
+
 			origin = intersection.pt_intersection
 
 		# sinon si le rayon sort de la sphère
 		else:
-
 			# on inverse la normale
-			intersection.normale = intersection.normale * (-1)
+			intersection.normale = (-1) * intersection.normale
+			scalaire = -scalaire
 
 			# on refait les opérations précédentes, en inversant les rôles des indices de réfractions
-			coeff = 1 - (1 - self.dir.dot(intersection.normale)**2) * (forme.materiau.indiceRefraction)**2
+			coeff = 1 - (forme.materiau.indiceRefraction)**2 * (1 - scalaire**2)
 
 			if coeff < 0:
 				return self.reflechir(forme, intersection)
 
-			direction = (self.dir * forme.materiau.indiceRefraction - intersection.normale * \
-			(self.dir.dot(intersection.normale) * forme.materiau.indiceRefraction + sqrt(coeff))).getNormalized
+			direction = (forme.materiau.indiceRefraction) * self.dir - \
+			(scalaire * forme.materiau.indiceRefraction + sqrt(coeff)) * intersection.normale
+			direction = direction / np.linalg.norm(direction)
+
 			origin = intersection.pt_intersection
 
 		return Ray(origin, direction)

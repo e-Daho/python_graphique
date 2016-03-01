@@ -1,8 +1,9 @@
 #! /usr/bin/env python
 # -*-coding: utf-8-*-
 
-from structures import Vector, Ray, Intersection
+from structures import Ray, Intersection
 from math import tan
+import numpy as np
 
 class Scene:
 	'''
@@ -87,7 +88,7 @@ class Scene:
 			intersection.normale = forme.getNormale(intersection.pt_intersection)
 
 			# on décale le point d'intersection pour corriger un bug d'affichage
-			intersection.pt_intersection = intersection.pt_intersection + intersection.normale * 0.01
+			intersection.pt_intersection = intersection.pt_intersection + 0.01 * intersection.normale
 
 			if forme.materiau.speculaire and n_rebonds > 0:
 				return self.getColor(ray.reflechir(forme, intersection), n_rebonds - 1)
@@ -96,17 +97,18 @@ class Scene:
 				return self.getColor(ray.refracter(forme, intersection), n_rebonds - 1)
 
 			# on calcule le vecteur v_lumiere partant de ce point et allant vers l'origine de la lumière
-			v_lumiere = (self.lumiere.origin - intersection.pt_intersection).getNormalized
+			v_lumiere = self.lumiere.origin - intersection.pt_intersection
+			v_lumiere = v_lumiere / np.linalg.norm(v_lumiere)
 
 			# on calcule la distance associée
-			distance = (self.lumiere.origin - intersection.pt_intersection).sqrNorm
+			distance = np.linalg.norm(self.lumiere.origin - intersection.pt_intersection)
 
 			# sinon on retourne la couleur du materiau final (dernier rebond)	
 			if self.isInShadow(intersection, v_lumiere, distance):
 				return (0,0,0)
 
 			# on calcule le max entre 0 et le produit scalaire du vecteur lumière et du vecteur normal
-			valeur = v_lumiere.dot(intersection.normale) * self.lumiere.intensite / (2*3.14*distance**2) 
+			valeur = self.lumiere.intensite / (2*3.14*distance**2) * np.dot(v_lumiere, intersection.normale) 
 
 			# on change les pixels en fonction du calcul du produit scalaire et de la valeur d'absorbance des couleurs par la sphère
 			return (max(0, int(valeur * forme.materiau.couleur[0])), max(0, int(valeur * forme.materiau.couleur[1])), max(0, int(valeur * forme.materiau.couleur[2])))		
@@ -125,16 +127,15 @@ class Scene:
 		pixels = image.load()
 
 		D = (image.size[0]/2) / tan(camera.fov/2)
-
-		rayon = Ray(camera.foyer, Vector(0,0,0))
 		
 		for i in xrange(image.size[1]):
 			for j in xrange(image.size[0]):
 
-				rayon.dir = Vector(j - image.size[0]/2, i - image.size[1]/2, -D).getNormalized
+				rayon_dir = np.array([j - image.size[0]/2, i - image.size[1]/2, -D])
+				rayon_dir = rayon_dir / np.linalg.norm(rayon_dir)
 
 				# on calcule la couleur du pixel intersecté
-				pixels[j,i] = self.getColor(rayon, n_rebonds)
+				pixels[j,i] = self.getColor(Ray(camera.foyer, rayon_dir), n_rebonds)
 
 		return image
 				

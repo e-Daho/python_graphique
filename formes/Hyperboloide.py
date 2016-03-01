@@ -29,17 +29,17 @@ class Hyperboloide():
 		b = self.coeff[1]
 		c = self.coeff[2]
 
-		x_0 = self.origin.xyz[0]
-		y_0 = self.origin.xyz[1]
-		z_0 = self.origin.xyz[2]
+		x_0 = self.origin[0]
+		y_0 = self.origin[1]
+		z_0 = self.origin[2]
 
-		u_x = ray.dir.xyz[0]
-		u_y = ray.dir.xyz[1]
-		u_z = ray.dir.xyz[2]
+		u_x = ray.dir[0]
+		u_y = ray.dir[1]
+		u_z = ray.dir[2]
 
-		u_x0 = ray.origin.xyz[0]
-		u_y0 = ray.origin.xyz[1]
-		u_z0 = ray.origin.xyz[2]
+		u_x0 = ray.origin[0]
+		u_y0 = ray.origin[1]
+		u_z0 = ray.origin[2]
 
 		# on calcule les coefficients de l'équation
 		m = (u_x/a)**2 - (u_y/b)**2 + (u_z/c)**2
@@ -57,11 +57,11 @@ class Hyperboloide():
 		b = self.coeff[1]
 		c = self.coeff[2]
 
-		x_0 = self.origin.xyz[0]
-		y_0 = self.origin.xyz[1]
-		z_0 = self.origin.xyz[2]
+		x_0 = self.origin[0]
+		y_0 = self.origin[1]
+		z_0 = self.origin[2]
 
-		return Vector((pt.xyz[0]-x_0)/a**2, -(pt.xyz[1]-y_0)/b**2, (pt.xyz[2]-z_0)/c**2).getNormalized
+		return Vector((pt[0]-x_0)/a**2, -(pt[1]-y_0)/b**2, (pt[2]-z_0)/c**2).getNormalized
 
 
 	def poly2getIntersection(a,b,c):
