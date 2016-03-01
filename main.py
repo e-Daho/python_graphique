@@ -1,7 +1,8 @@
 #! /usr/bin/env python
 # -*-coding: utf-8-*-
 
-import Image
+import  PIL
+from PIL import Image
 
 from decors import Scene, Camera, Lumiere
 from formes import Sphere, Materiau
