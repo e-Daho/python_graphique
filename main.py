@@ -34,7 +34,7 @@ def main():
 	image = Image.new( 'RGB', (W,H), "black")
 	
 	# on crée la scène
-	lumiere  = Lumiere(np.array([-10,-20,40]), 5000000)
+	lumiere  = Lumiere(np.array([-10,-20,40]), 750000000)
 	camera = Camera(np.array([0,0,55]), 90 * 3.14 / 180)
 	n_rebonds = 5 
 

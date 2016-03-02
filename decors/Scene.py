@@ -111,7 +111,12 @@ class Scene:
 			valeur = self.lumiere.intensite / (2*3.14*distance**2) * np.dot(v_lumiere, intersection.normale) 
 
 			# on change les pixels en fonction du calcul du produit scalaire et de la valeur d'absorbance des couleurs par la sphère
-			return (max(0, int(valeur * forme.materiau.couleur[0])), max(0, int(valeur * forme.materiau.couleur[1])), max(0, int(valeur * forme.materiau.couleur[2])))		
+			# on élève à lapuissance 1/2.2 pour compenser la correction gamma
+			return (
+				max(0, int((valeur * forme.materiau.couleur[0])**(1./2.2))), 
+				max(0, int((valeur * forme.materiau.couleur[1])**(1./2.2))),
+				max(0, int((valeur * forme.materiau.couleur[2])**(1./2.2)))
+				)		
 			
 		return (0,0,0)
 
