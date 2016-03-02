@@ -2,7 +2,9 @@
 # -*-coding: utf-8-*-
 
 from structures import Vector, Ray, Intersection
-from math import tan
+from math import tan, cos, sin, sqrt, ceil
+import operator
+from random import uniform
 
 class Scene:
 	'''
@@ -47,7 +49,7 @@ class Scene:
 		:param v_lumiere : Vector (normalisé)
 		:returns booleen
 		"""
-		
+
 		for sphere in self.spheres:
 
 			intersection2 = sphere.intersect(Ray(intersection.pt_intersection, v_lumiere))
@@ -88,6 +90,9 @@ class Scene:
 
 			# on décale le point d'intersection pour corriger un bug d'affichage
 			intersection.pt_intersection = intersection.pt_intersection + intersection.normale * 0.01
+			
+			if intersection.pt_intersection.sqrNorm > 1000:
+				return (0,0,0)
 
 			if forme.materiau.speculaire and n_rebonds > 0:
 				return self.getColor(ray.reflechir(forme, intersection), n_rebonds - 1)
@@ -101,20 +106,44 @@ class Scene:
 			# on calcule la distance associée
 			distance = (self.lumiere.origin - intersection.pt_intersection).sqrNorm
 
-			# sinon on retourne la couleur du materiau final (dernier rebond)	
+			# sinon on retourne la couleur du materiau final (dernier rebond)
 			if self.isInShadow(intersection, v_lumiere, distance):
-				return (0,0,0)
+				couleur = (0,0,0)
 
-			# on calcule le max entre 0 et le produit scalaire du vecteur lumière et du vecteur normal
-			valeur = v_lumiere.dot(intersection.normale) * self.lumiere.intensite / (2*3.14*distance**2) 
+			else:
+				# on calcule le max entre 0 et le produit scalaire du vecteur lumière et du vecteur normal
+				valeur = v_lumiere.dot(intersection.normale) * self.lumiere.intensite / (2*3.14*distance**2) 
+				valeur = max(0, valeur)
 
-			# on change les pixels en fonction du calcul du produit scalaire et de la valeur d'absorbance des couleurs par la sphère
-			return (max(0, int(valeur * forme.materiau.couleur[0])), max(0, int(valeur * forme.materiau.couleur[1])), max(0, int(valeur * forme.materiau.couleur[2])))		
+				couleur = (valeur * forme.materiau.couleur[0], valeur * forme.materiau.couleur[1], valeur * forme.materiau.couleur[2])
+
+			# contribution diffuse
+			if n_rebonds > 0:
+				
+				# on génère deux valeures aléatoires
+				r1 = uniform(0, 1.)
+				r2 = uniform(0, 1.)
+
+				# on génère un vecteur aléatoire et une base locale
+				indirectDirLocal = Vector( cos(2*3.14*r1)*sqrt(1-r2), sin(2*3.14*r1)*sqrt(1-r2), sqrt(r2) ).getNormalized
+				randomVect = Vector(uniform(0, 1.), uniform(0, 1.), uniform(0, 1.)).getNormalized
+
+				tangent1 = intersection.normale.cross(randomVect).getNormalized
+				tangent2 = intersection.normale.cross(tangent1).getNormalized
+
+				# on transfert le vecteur dans la base globale
+				indirectDirGlobal = tangent1 * indirectDirLocal[0] + tangent2 * indirectDirLocal[1] + intersection.normale * indirectDirLocal[2]
+				ray_diffus = Ray(intersection.pt_intersection + intersection.normale * 0.01, indirectDirGlobal)
+				couleur_diffuse = self.getColor(ray_diffus, n_rebonds - 1)
+
+				couleur = tuple(map(operator.add, couleur, couleur_diffuse))
+			
+			return couleur
 			
 		return (0,0,0)
 
 
-	def getImage(self, camera, image, n_rebonds):
+	def getImage(self, camera, image, n_rebonds, n_echantillons):
 		"""
 		:param camera : Camera
 		:param image : Image, l'image à créer
@@ -129,12 +158,18 @@ class Scene:
 		rayon = Ray(camera.foyer, Vector(0,0,0))
 		
 		for i in xrange(image.size[1]):
+			print "[" + "=" * (i*10 /image.size[1]) + ">]" + " " + str(i*100 /image.size[1]) + "%"
+			
 			for j in xrange(image.size[0]):
-
 				rayon.dir = Vector(j - image.size[0]/2, i - image.size[1]/2, -D).getNormalized
+				couleur = (0,0,0)
 
-				# on calcule la couleur du pixel intersecté
-				pixels[j,i] = self.getColor(rayon, n_rebonds)
+				for k in xrange(n_echantillons):
+					# on calcule la couleur du pixel intersecté
+					couleur = tuple(map(operator.add, couleur, self.getColor(rayon, n_rebonds)))
+					couleur = (int(((couleur[0])/n_echantillons)**(1/2.2)), int(((couleur[1])/n_echantillons)**(1/2.2)), int(((couleur[2])/n_echantillons)**(1/2.2)))
+
+				pixels[j,i] = couleur
 
 		return image
 				

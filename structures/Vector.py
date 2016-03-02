@@ -42,3 +42,10 @@ class Vector(object):
 
 	def dot(self, v2):
 		return self[0] * v2[0] + self[1] * v2[1] + self[2] * v2[2]
+
+	def cross(self, v2):
+		return Vector(
+			self[1] * v2[2] - self[2] * v2[1],
+			self[2] * v2[0] - self[0] * v2[2],
+			self[0] * v2[1] - self[1] * v2[0] 
+		)

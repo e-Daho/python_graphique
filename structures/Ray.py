@@ -1,7 +1,9 @@
 #! /usr/bin/env python
 # -*-coding: utf-8-*-
 
-from math import sqrt
+from math import sqrt, cos, sin
+from random import uniform
+import Vector
 
 class Ray():
 	'''
@@ -18,7 +20,6 @@ class Ray():
 
 	def reflechir(self, forme, intersection):
 		"""
-		:param ray : Ray, rayon à réfléchir
 		:param forme : Sphere, la sphere sur laquelle le rayon se réfléchi
 		:param intersection : Intersection, le point de réflexion
 		:returns Ray, rayon réfléchi 
@@ -35,7 +36,6 @@ class Ray():
 
 	def refracter(self, forme, intersection):
 		"""
-		:param ray : Ray, rayon à réfracter
 		:param forme : Sphere, la sphere dans laquelle le rayon se réfracte
 		:param intersection : Intersection, le point de pénétration du rayon dans la sphère
 		:returns Ray, rayon réfracté 
@@ -71,3 +71,25 @@ class Ray():
 			origin = intersection.pt_intersection
 
 		return Ray(origin, direction)
+
+	def diffuser(self, intersection):
+		"""
+		:param intersection : Intersection
+		:returns ray : Ray
+		"""
+
+		# on génère deux valeures aléatoires
+		r1 = uniform(0, 1.)
+		r2 = uniform(0, 1.)
+		
+		# on génère un vecteur aléatoire et une base locale
+		indirectDirLocal = Vector( cos(2*3.14*r1)*sqrt(1-r2), sin(2*3.14*r1)*sqrt(1-r2), sqrt(r2) )
+		randomVect = Vector(uniform(0, 1.), uniform(0, 1.), uniform(0, 1.))
+		
+		tangent1 = intersection.normale.cross(randomVect).getNormalized
+		tangent2 = intersection.normale.cross(tangent1).getNormalized
+
+		# on transfert le vecteur dans la base globale
+		indirectDirGlobal = tangent1 * indirectDirLocal[0] + tangent2 * indirectDirLocal[1] + intersection.normale * indirectDirLocal[2]
+
+		return Ray(intersection.pt_intersection, indirectDirGlobal)		
