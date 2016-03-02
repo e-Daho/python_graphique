@@ -121,7 +121,7 @@ class Scene:
 		return (0,0,0)
 
 
-	def getImage(self, camera, image, n_rebonds):
+	def getImage(self, camera, image, n_rebonds, cadran, out_q):
 		"""
 		:param camera : Camera
 		:param image : Image, l'image à créer
@@ -132,9 +132,37 @@ class Scene:
 		pixels = image.load()
 
 		D = (image.size[0]/2) / tan(camera.fov/2)
-		
-		for i in xrange(image.size[1]):
-			for j in xrange(image.size[0]):
+
+		# on divise l'image en 4 quadrans
+		if cadran == 0:
+			debut_i = 0
+			fin_i = image.size[1]/2
+			debut_j = 0
+			fin_j = image.size[0]/2
+
+		elif cadran == 1:
+			debut_i = 0
+			fin_i = image.size[1]/2
+			debut_j = image.size[0]/2
+			fin_j = image.size[0]
+
+		elif cadran == 2:
+			debut_i = image.size[1]/2
+			fin_i = image.size[1]
+			debut_j = 0
+			fin_j = image.size[0]/2
+
+		elif cadran == 3:
+			debut_i = image.size[1]/2
+			fin_i = image.size[1]
+			debut_j = image.size[0]/2
+			fin_j = image.size[0]
+
+		else:
+			return
+
+		for i in xrange(debut_i, fin_i):
+			for j in xrange(debut_j, fin_j):
 
 				rayon_dir = np.array([j - image.size[0]/2, i - image.size[1]/2, -D])
 				rayon_dir = rayon_dir / np.linalg.norm(rayon_dir)
@@ -142,5 +170,7 @@ class Scene:
 				# on calcule la couleur du pixel intersecté
 				pixels[j,i] = self.getColor(Ray(camera.foyer, rayon_dir), n_rebonds)
 
-		return image
+		out_q.put(image)
+
+
 				

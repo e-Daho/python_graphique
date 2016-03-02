@@ -1,10 +1,10 @@
 #! /usr/bin/env python
 # -*-coding: utf-8-*-
 
-import  PIL
-from PIL import Image
-
+from PIL import Image, ImageChops
+from multiprocessing import Process, Queue, TimeoutError
 import numpy as np
+from itertools import izip
 
 from decors import Scene, Camera, Lumiere
 from formes import Sphere, Materiau
@@ -59,10 +59,31 @@ def main():
 
 	scene = Scene([s1,s2,s3,s4,s5,s6,s7], lumiere)
 
-	image = scene.getImage(camera, image, n_rebonds)
-					
+	# variable pour le multiprocessing
+	n_quadrants = 4
+	out_q = Queue()
+	imageProcess = []
+	imageQuadran = []
+
+	# on lance des process pour chaque quadran
+	for i in xrange(n_quadrants):
+		imageProcess.append(Process(target = scene.getImage, 
+										args = (camera, image, n_rebonds, i, out_q)))
+		imageProcess[i].start()
+
+	for i in xrange(n_quadrants):	
+		imageQuadran.append(out_q.get())
+
+	for i in xrange(n_quadrants):
+		imageProcess[i].join()
+
+	# on reconstruit l'image depuis les quadrans
+	image_haute = ImageChops.add(imageQuadran[0], imageQuadran[1])
+	image_basse = ImageChops.add(imageQuadran[2], imageQuadran[3])
+	image = ImageChops.add(image_haute, image_basse)
+
 	image.show()
-	
+
 
 #==============================================================================
 
