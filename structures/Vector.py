@@ -19,11 +19,11 @@ class Vector(object):
 
 	@property
 	def sqrNorm(self):
-		return sqrt(self.xyz[0]*self.xyz[0] + self.xyz[1]*self.xyz[1] + self.xyz[2]*self.xyz[2])
+		return self.xyz[0]*self.xyz[0] + self.xyz[1]*self.xyz[1] + self.xyz[2]*self.xyz[2]
 
 	@property
 	def getNormalized(self):
-		return Vector(self[0] * (1 / self.sqrNorm), self[1] * (1 / self.sqrNorm), self[2] * (1 / self.sqrNorm))
+		return Vector(self[0] * (1 / sqrt(self.sqrNorm)), self[1] * (1 / sqrt(self.sqrNorm)), self[2] * (1 / sqrt(self.sqrNorm)))
 
 	def __getitem__(self, i):
 		return self.xyz[i]

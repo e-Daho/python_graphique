@@ -26,7 +26,7 @@ class Sphere():
 		# équation de type a*t^2 + b*t +c = 0
 		a = 1.
 		b = 2 * ray.dir.dot(ray.origin - self.origin)
-		c = (ray.origin - self.origin).sqrNorm**2 - self.rayon*self.rayon
+		c = (ray.origin - self.origin).sqrNorm - self.rayon*self.rayon
 
 		# on renvoie un objet intersection
 		return self.poly2getIntersection(a,b,c)
@@ -67,6 +67,3 @@ class Sphere():
 		# fonction retournant le vecteur normal à la sphère en un point donné
 
 		return (pt - self.origin).getNormalized
-
-
-	

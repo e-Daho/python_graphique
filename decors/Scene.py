@@ -42,38 +42,62 @@ class Scene:
 			return (forme_min, intersection_min)
 
 
-	def isInShadow(self, intersection, v_lumiere, distance):
+	def isInShadow(self, intersection, v_lumiere, distanceCarree):
 		"""
-		:param scene : Scene, la scene concernée
 		:param intersection : Intersection
 		:param v_lumiere : Vector (normalisé)
+		:param distance : float, la distance entre la source de lumière et le point d'intersection
 		:returns booleen
 		"""
 
 		for sphere in self.spheres:
-
 			intersection2 = sphere.intersect(Ray(intersection.pt_intersection, v_lumiere))
 
 			if intersection2.has_intersection:
-
-				# on calcule la distance dist entre intersection 2 et la et l'origine de la lumière
 				dist = intersection2.t
-						
-				# on compare cette distance avec la distance d1 entre le i1 et l'origine de la lumière
+	
 				# si cette d est inférieure à dist, le point est dans l'ombre, on ne fait rien
-				if dist < distance:
-
+				if dist**2 < distanceCarree:
 					return True
 					break
 
 		return False
 
 
-	def getColor(self, ray, n_rebonds):
+	def diffuser(self, ray, intersection):
+		"""
+		:param ray : Ray, rayon à diffuser
+		:param intersection : Intersection, le point de pénétration du rayon dans la sphère
+		:returns Ray, rayon réfracté 
+		"""
+
+		# on génère deux valeures aléatoires
+		r1 = uniform(0.0001, 0.99999)
+		r2 = uniform(0.0001, 0.99999)
+
+		# on génère un vecteur aléatoire et une base locale
+		indirectDirLocal = Vector( cos(2*3.14*r1)*sqrt(1-r2), sin(2*3.14*r1)*sqrt(1-r2), sqrt(r2) )
+
+		randomVect = Vector(uniform(0.0001, 0.99999), uniform(0.0001, 0.99999), uniform(0.0001, 0.99999))
+
+		tangent1 = intersection.normale.cross(randomVect)
+		tangent2 = intersection.normale.cross(tangent1)
+
+		# on transfert le vecteur dans la base globale
+		indirectDirGlobal = (tangent1 * indirectDirLocal[0] + tangent2 * indirectDirLocal[1] + intersection.normale * indirectDirLocal[2]).getNormalized
+		
+		ray.origin = intersection.pt_intersection - intersection.normale * 0.0001
+		ray.dir = indirectDirGlobal
+
+		return ray
+
+
+	def getColor(self, ray, n_rebonds, diffus):
 		"""
 		:param scene : Scene, la scene concernée
 		:param ray : Ray, le rayon inscident à la sphere
 		:param n_rebonds : int, le nombre max de rebonds
+		:param diffus : booleen, True si on veut l'éclairage diffus, False si on veut l'éclairage direct
 		:returns couleur : (int, int, int)
 		"""
 
@@ -91,59 +115,41 @@ class Scene:
 			# on décale le point d'intersection pour corriger un bug d'affichage
 			intersection.pt_intersection = intersection.pt_intersection + intersection.normale * 0.01
 			
-			if intersection.pt_intersection.sqrNorm > 1000:
+			if intersection.pt_intersection.sqrNorm > 1000000:
 				return (0,0,0)
 
 			if forme.materiau.speculaire and n_rebonds > 0:
-				return self.getColor(ray.reflechir(forme, intersection), n_rebonds - 1)
+				ray.reflechir(forme, intersection)
+				return self.getColor(ray, n_rebonds - 1, diffus)
 
 			if forme.materiau.indiceRefraction != 0  and n_rebonds > 0:
-				return self.getColor(ray.refracter(forme, intersection), n_rebonds - 1)
+				ray.refracter(forme, intersection)
+				return self.getColor(ray, n_rebonds - 1, diffus)
+
+			if diffus and n_rebonds > 0:
+				ray = self.diffuser(ray, intersection)
+				return self.getColor(ray, n_rebonds - 1, diffus)
 
 			# on calcule le vecteur v_lumiere partant de ce point et allant vers l'origine de la lumière
 			v_lumiere = (self.lumiere.origin - intersection.pt_intersection).getNormalized
 
 			# on calcule la distance associée
-			distance = (self.lumiere.origin - intersection.pt_intersection).sqrNorm
+			distanceCarree = (self.lumiere.origin - intersection.pt_intersection).sqrNorm
 
-			# sinon on retourne la couleur du materiau final (dernier rebond)
-			if self.isInShadow(intersection, v_lumiere, distance):
-				couleur = (0,0,0)
+			if self.isInShadow(intersection, v_lumiere, distanceCarree):
+				return (0,0,0)
 
-			else:
-				# on calcule le max entre 0 et le produit scalaire du vecteur lumière et du vecteur normal
-				valeur = v_lumiere.dot(intersection.normale) * self.lumiere.intensite / (2*3.14*distance**2) 
-				valeur = max(0, valeur)
+			# on calcule le max entre 0 et le produit scalaire du vecteur lumière et du vecteur normal
+			valeur = v_lumiere.dot(intersection.normale) * self.lumiere.intensite / (2*3.14*distanceCarree) 
+			valeur = max(0, valeur)
 
-				couleur = (valeur * forme.materiau.couleur[0], valeur * forme.materiau.couleur[1], valeur * forme.materiau.couleur[2])
+			return (valeur * forme.materiau.couleur[0], valeur * forme.materiau.couleur[1], valeur * forme.materiau.couleur[2])
 
-			# contribution diffuse
-			if n_rebonds > 0:
-				
-				# on génère deux valeures aléatoires
-				r1 = uniform(0, 1.)
-				r2 = uniform(0, 1.)
-
-				# on génère un vecteur aléatoire et une base locale
-				indirectDirLocal = Vector( cos(2*3.14*r1)*sqrt(1-r2), sin(2*3.14*r1)*sqrt(1-r2), sqrt(r2) ).getNormalized
-				randomVect = Vector(uniform(0, 1.), uniform(0, 1.), uniform(0, 1.)).getNormalized
-
-				tangent1 = intersection.normale.cross(randomVect).getNormalized
-				tangent2 = intersection.normale.cross(tangent1).getNormalized
-
-				# on transfert le vecteur dans la base globale
-				indirectDirGlobal = tangent1 * indirectDirLocal[0] + tangent2 * indirectDirLocal[1] + intersection.normale * indirectDirLocal[2]
-				ray_diffus = Ray(intersection.pt_intersection + intersection.normale * 0.01, indirectDirGlobal)
-				couleur_diffuse = self.getColor(ray_diffus, n_rebonds - 1)
-
-				couleur = tuple(map(operator.add, couleur, couleur_diffuse))
-			
-			return couleur
-			
 		return (0,0,0)
 
 
-	def getImage(self, camera, image, n_rebonds, n_echantillons):
+	def getImage(self, camera, image, n_rebonds, quadrant, out_q, n_echantillons, diffus):
+
 		"""
 		:param camera : Camera
 		:param image : Image, l'image à créer
@@ -153,23 +159,57 @@ class Scene:
 
 		pixels = image.load()
 
+		# on divise l'image en 4 quadrans
+		if quadrant == 0:
+			debut_i = 0
+			fin_i = image.size[1]/2
+			debut_j = 0
+			fin_j = image.size[0]/2
+
+		elif quadrant == 1:
+			debut_i = 0
+			fin_i = image.size[1]/2
+			debut_j = image.size[0]/2
+			fin_j = image.size[0]
+
+		elif quadrant == 2:
+			debut_i = image.size[1]/2
+			fin_i = image.size[1]
+			debut_j = 0
+			fin_j = image.size[0]/2
+
+		elif quadrant == 3:
+			debut_i = image.size[1]/2
+			fin_i = image.size[1]
+			debut_j = image.size[0]/2
+			fin_j = image.size[0]
+
+		else:
+			return
+
 		D = (image.size[0]/2) / tan(camera.fov/2)
-
-		rayon = Ray(camera.foyer, Vector(0,0,0))
 		
-		for i in xrange(image.size[1]):
-			print "[" + "=" * (i*10 /image.size[1]) + ">]" + " " + str(i*100 /image.size[1]) + "%"
-			
-			for j in xrange(image.size[0]):
+		rayon = Ray(camera.foyer, Vector(0,0,0))
+
+		for i in xrange(debut_i, fin_i):
+			if quadrant == 0:
+				print "[" + "=" * (i*20 /image.size[1]) + ">]" + " " + str(i*200 /image.size[1]) + "%"	
+
+			for j in xrange(debut_j, fin_j):
+				rayon = Ray(camera.foyer, Vector(0,0,0))
 				rayon.dir = Vector(j - image.size[0]/2, i - image.size[1]/2, -D).getNormalized
-				couleur = (0,0,0)
-
-				for k in xrange(n_echantillons):
-					# on calcule la couleur du pixel intersecté
-					couleur = tuple(map(operator.add, couleur, self.getColor(rayon, n_rebonds)))
-					couleur = (int(((couleur[0])/n_echantillons)**(1/2.2)), int(((couleur[1])/n_echantillons)**(1/2.2)), int(((couleur[2])/n_echantillons)**(1/2.2)))
-
-				pixels[j,i] = couleur
-
-		return image
 				
+				couleur = self.getColor(rayon, n_rebonds, False)
+
+				if diffus:
+					couleur_diffuse = (0,0,0)
+					for k in xrange(n_echantillons):
+						couleur_diffuse = tuple(map(operator.add, couleur_diffuse, self.getColor(rayon, n_rebonds, True)))
+
+					couleur_diffuse = (couleur_diffuse[0]/n_echantillons, couleur_diffuse[1]/n_echantillons, couleur_diffuse[2]/n_echantillons)
+					couleur = tuple(map(operator.add, couleur_diffuse, couleur))
+
+				# on applique la correction gamma
+				pixels[j,i] = (int(couleur[0]**(1/2.2)), int(couleur[1]**(1/2.2)), int(couleur[2]**(1/2.2)))
+
+		out_q.put(image)
